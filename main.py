@@ -44,23 +44,11 @@ with col1:
     st.metric(label="Risk Skoru", value=f"%{risk}")
 
     if risk <= 40:
-    st.success("🟢 Stabil – Rutin izlem yeterli")
-
-    st.markdown("### 🩺 NANDA Hemşirelik Tanısı")
-    st.info("Sağlığı Geliştirmeye Hazır Olma")
-
-    st.markdown("### 📩 Hemşire Bilgilendirme Mesajı")
-    st.write(
-        "Hasta fizyolojik ve psikososyal açıdan stabil görünmektedir. "
-        "Rutin izlem ve mevcut bakım planının sürdürülmesi önerilir."
-    )
-
-if risk <= 40:
-    st.success("🟢 Stabil – Rutin izlem yeterli")
-elif risk <= 70:
-    st.warning("🟡 Riskli – Yakın izlem önerilir")
-else:
-    st.error("🔴 Yüksek Risk – Müdahale gerekli")
+        st.success("🟢 Stabil – Rutin izlem yeterli")
+    elif risk <= 70:
+        st.warning("🟡 Riskli – Yakın izlem önerilir")
+    else:
+        st.error("🔴 Yüksek Risk – Müdahale gerekli")
 
 with col2:
     st.header("📊 Risk Bileşenleri")
