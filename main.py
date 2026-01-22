@@ -1,56 +1,70 @@
 import streamlit as st
+import pandas as pd
 
-# Sayfa ayarları
-st.set_page_config(
-    page_title="Hemşirelik Dijital İkizi",
-    layout="wide"
-)
+st.set_page_config(page_title="NursTwin-Home", layout="wide")
+st.title("🏠 NursTwin-Home")
+st.subheader("Evde Bakım Hastası için Dijital İkiz Karar Destek Paneli")
 
-# SOL PANEL (Sidebar)
-st.sidebar.title("🩺 Hemşire Paneli")
+# -------------------
+# SOL PANEL – GİRDİLER
+# -------------------
+st.sidebar.header("📥 Hasta Parametreleri")
 
-sayfa = st.sidebar.radio(
-    "Sayfa Seçiniz:",
-    ["🏠 Ana Kontrol Paneli", "🔮 Simülasyon & Öngörü", "✅ Klinik Validasyon"]
-)
+nabiz = st.sidebar.slider("Nabız (bpm)", 40, 140, 80)
+spo2 = st.sidebar.slider("SpO₂ (%)", 80, 100, 96)
+hrv = st.sidebar.slider("HRV (ms)", 10, 120, 60)
+stres = st.sidebar.selectbox("Psikolojik Stres", ["Düşük", "Orta", "Yüksek"])
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("📥 Hasta Verileri")
+# -------------------
+# RİSK HESAPLAMA
+# -------------------
+risk = 0
 
-nabiz = st.sidebar.number_input("Nabız (bpm)", min_value=40, max_value=150, value=72)
-spo2 = st.sidebar.number_input("SpO₂ (%)", min_value=80, max_value=100, value=98)
-hareket = st.sidebar.selectbox(
-    "Hareketlilik Durumu",
-    ["Aktif", "Kısıtlı", "Hareketsiz"]
-)
+if nabiz < 50 or nabiz > 110:
+    risk += 25
 
-oda_sicakligi = st.sidebar.slider("Oda Sıcaklığı (°C)", 16, 30, 22)
+if spo2 < 92:
+    risk += 30
 
-if sayfa == "🏠 Ana Kontrol Paneli":
-    st.title("🏠 Ana Kontrol Paneli")
-    st.caption("Hastanın anlık bakım durumu – dijital ikiz görünümü")
-    st.markdown("---")
+if hrv < 40:
+    risk += 25
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Nabız", f"{nabiz} bpm")
-    with c2:
-        st.metric("SpO₂", f"%{spo2}")
-    with c3:
-        st.metric("Hareket", hareket)
+if stres == "Orta":
+    risk += 10
+elif stres == "Yüksek":
+    risk += 20
 
-    st.markdown("---")
-    st.info("⚙️ Henüz risk hesaplaması yok. Bir sonraki adımda ekleyeceğiz.")
+# -------------------
+# SAĞ PANEL – ÇIKTILAR
+# -------------------
+col1, col2 = st.columns(2)
 
+with col1:
+    st.header("🔢 Genel Risk Skoru")
+    st.metric(label="Risk Skoru", value=f"%{risk}")
 
-elif sayfa == "🔮 Simülasyon & Öngörü":
-    st.title("🔮 Simülasyon & Öngörü")
-    st.write("Bu sayfa, 'ne olursa?' senaryoları içindir.")
-    st.warning("Henüz simülasyon yok.")
+    if risk <= 40:
+        st.success("🟢 Stabil – Rutin izlem yeterli")
+    elif risk <= 70:
+        st.warning("🟡 Riskli – Yakın izlem önerilir")
+    else:
+        st.error("🔴 Yüksek Risk – Müdahale gerekli")
 
-elif sayfa == "✅ Klinik Validasyon":
-    st.title("✅ Klinik Validasyon")
-    st.write("Bu sayfa, model doğrulama içindir.")
-    st.success("Henüz karşılaştırma yok.")
+with col2:
+    st.header("📊 Risk Bileşenleri")
+
+    data = {
+        "Parametre": ["Nabız", "SpO₂", "HRV", "Stres"],
+        "Risk Katkısı": [
+            25 if (nabiz < 50 or nabiz > 110) else 0,
+            30 if spo2 < 92 else 0,
+            25 if hrv < 40 else 0,
+            20 if stres == "Yüksek" else 10 if stres == "Orta" else 0
+        ]
+    }
+
+    df = pd.DataFrame(data)
+    st.bar_chart(df.set_index("Parametre"))
+
 
 
