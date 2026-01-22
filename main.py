@@ -26,11 +26,22 @@ hareket = st.sidebar.selectbox(
 
 oda_sicakligi = st.sidebar.slider("Oda Sıcaklığı (°C)", 16, 30, 22)
 
-# ANA SAYFA
 if sayfa == "🏠 Ana Kontrol Paneli":
     st.title("🏠 Ana Kontrol Paneli")
-    st.write("Bu alan, hastanın anlık bakım durumunu gösterir.")
-    st.info("Henüz hesaplama yok. Sadece iskelet.")
+    st.caption("Hastanın anlık bakım durumu – dijital ikiz görünümü")
+    st.markdown("---")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Nabız", f"{nabiz} bpm")
+    with c2:
+        st.metric("SpO₂", f"%{spo2}")
+    with c3:
+        st.metric("Hareket", hareket)
+
+    st.markdown("---")
+    st.info("⚙️ Henüz risk hesaplaması yok. Bir sonraki adımda ekleyeceğiz.")
+
 
 elif sayfa == "🔮 Simülasyon & Öngörü":
     st.title("🔮 Simülasyon & Öngörü")
@@ -41,4 +52,5 @@ elif sayfa == "✅ Klinik Validasyon":
     st.title("✅ Klinik Validasyon")
     st.write("Bu sayfa, model doğrulama içindir.")
     st.success("Henüz karşılaştırma yok.")
+
 
