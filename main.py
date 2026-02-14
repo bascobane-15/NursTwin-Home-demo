@@ -1,103 +1,87 @@
 import streamlit as st
+import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="NursTwin-Home", layout="wide")
-st.title("🏠 NursTwin-Home")
-st.subheader("Evde Bakım Hastası için Dijital İkiz Karar Destek Paneli")
+st.set_page_config(page_title="BioTwin-Integrated", layout="wide")
 
-# -------------------
-# SOL PANEL – GİRDİLER
-# -------------------
-st.sidebar.header("📥 Hasta Parametreleri")
+st.title("🧬 BioTwin-Integrated")
+st.subheader("30 Günlük Kronik Stres ve Uyku Azalması Simülasyonu")
 
-nabiz = st.sidebar.slider("Nabız (bpm)", 40, 140, 80)
-spo2 = st.sidebar.slider("SpO₂ (%)", 80, 100, 96)
-hrv = st.sidebar.slider("HRV (ms)", 10, 120, 60)
-stres = st.sidebar.selectbox("Psikolojik Stres", ["Düşük", "Orta", "Yüksek"])
+# ---------------------------
+# GİRİŞ PARAMETRELERİ
+# ---------------------------
 
-# -------------------
-# RİSK HESAPLAMA
-# -------------------
-risk = 0
+st.sidebar.header("Girdi Parametreleri")
 
-if nabiz < 50 or nabiz > 110:
-    risk += 25
+stress = st.sidebar.slider("Stres Seviyesi (0-10)", 0, 10, 6)
+sleep = st.sidebar.slider("Uyku Süresi (Saat)", 4, 8, 5)
+days = st.sidebar.slider("Simülasyon Süresi (Gün)", 1, 30, 30)
 
-if spo2 < 92:
-    risk += 30
+# ---------------------------
+# BAŞLANGIÇ DEĞERLERİ
+# ---------------------------
 
-if hrv < 40:
-    risk += 25
+C = 50  # Kortizol
+results = []
 
-if stres == "Orta":
-    risk += 10
-elif stres == "Yüksek":
-    risk += 20
+for t in range(1, days + 1):
+    
+    # Kortizol (zamana bağlı birikimli)
+    C = C + (stress * 0.8) - (sleep * 0.5)
+    C = np.clip(C, 30, 100)
+    
+    # Kan Şekeri
+    G = 50 + (C * 0.3)
+    
+    # İnsülin Duyarlılığı
+    I = 100 - (G * 0.4) - (t * 0.5)
+    I = np.clip(I, 0, 100)
+    
+    # Bağışıklık
+    B = 100 - (C * 0.3) - ((8 - sleep) * 5) - (t * 0.7)
+    B = np.clip(B, 0, 100)
+    
+    # Homeostaz
+    H = (I + B) / 2
+    
+    results.append([t, C, G, I, B, H])
 
-# -------------------
-# SAĞ PANEL – ÇIKTILAR
-# -------------------
-col1, col2 = st.columns(2)
+# ---------------------------
+# DATAFRAME
+# ---------------------------
 
-with col1:
-    st.header("🔢 Genel Risk Skoru")
-    st.metric(label="Risk Skoru", value=f"%{risk}")
+df = pd.DataFrame(results, columns=["Gün", "Kortizol", "Kan Şekeri", "İnsülin", "Bağışıklık", "Homeostaz"])
 
-   if risk <= 40:
-    st.success("🟢 Stabil – Rutin izlem yeterli")
+# ---------------------------
+# GRAFİKLER
+# ---------------------------
 
-    st.markdown("### 🩺 NANDA Hemşirelik Tanısı")
-    st.info("Sağlığı Geliştirmeye Hazır Olma")
+st.subheader("📊 Fizyolojik Değişim Grafikleri")
 
-    st.markdown("### 📩 Hemşire Bilgilendirme Mesajı")
-    st.write(
-        "Hasta fizyolojik ve psikososyal açıdan stabil görünmektedir. "
-        "Rutin izlem ve mevcut bakım planının sürdürülmesi önerilir."
-    )
+fig, ax = plt.subplots()
+ax.plot(df["Gün"], df["Kortizol"], label="Kortizol")
+ax.plot(df["Gün"], df["Kan Şekeri"], label="Kan Şekeri")
+ax.plot(df["Gün"], df["İnsülin"], label="İnsülin")
+ax.plot(df["Gün"], df["Bağışıklık"], label="Bağışıklık")
+ax.plot(df["Gün"], df["Homeostaz"], label="Homeostaz")
 
-elif risk <= 70:
-    st.warning("🟡 Riskli – Yakın izlem önerilir")
+ax.set_xlabel("Gün")
+ax.set_ylabel("İndeks Değeri")
+ax.legend()
 
-    st.markdown("### 🩺 NANDA Hemşirelik Tanısı")
-    st.info("Deri Bütünlüğünde Bozulma Riski")
+st.pyplot(fig)
 
-    st.markdown("### 📩 Hemşire Bilgilendirme Mesajı")
-    st.write(
-        "Hastada hareketlilik azalması ve fizyolojik değişiklikler gözlenmektedir. "
-        "Pozisyon değişim aralıklarının kısaltılması ve cilt bütünlüğünün yakından izlenmesi önerilir."
-    )
+# ---------------------------
+# SON GÜN DURUMU
+# ---------------------------
 
-else:
-    st.error("🔴 Yüksek Risk – Müdahale gerekli")
+st.subheader("📌 Son Gün Fizyolojik Durum")
 
-    st.markdown("### 🩺 NANDA Hemşirelik Tanısı")
-    st.info("Gaz Değişiminde Bozulma / Aktivite İntoleransı")
+last = df.iloc[-1]
 
-    st.markdown("### 📩 Hemşire Acil Uyarı Mesajı")
-    st.write(
-        "Hastada ciddi fizyolojik riskler tespit edilmiştir. "
-        "Derhal hemşirelik müdahalesi uygulanmalı, gerekirse hekim bilgilendirilmelidir."
-    )
-
-
-with col2:
-    st.header("📊 Risk Bileşenleri")
-
-    data = {
-        "Parametre": ["Nabız", "SpO₂", "HRV", "Stres"],
-        "Risk Katkısı": [
-            25 if (nabiz < 50 or nabiz > 110) else 0,
-            30 if spo2 < 92 else 0,
-            25 if hrv < 40 else 0,
-            20 if stres == "Yüksek" else 10 if stres == "Orta" else 0
-        ]
-    }
-
-    df = pd.DataFrame(data)
-    st.bar_chart(df.set_index("Parametre"))
-
-
-
-
-
-
+st.write(f"**Kortizol:** {round(last['Kortizol'],1)}")
+st.write(f"**Kan Şekeri:** {round(last['Kan Şekeri'],1)}")
+st.write(f"**İnsülin Duyarlılığı:** {round(last['İnsülin'],1)}")
+st.write(f"**Bağışıklık İndeksi:** {round(last['Bağışıklık'],1)}")
+st.write(f"**Homeostaz Skoru:** {round(last['Homeostaz'],1)}")
